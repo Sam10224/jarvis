@@ -66,24 +66,60 @@ async function startJarvis() {
     store.bind(Jarvis.ev)
 
     Jarvis.ev.on('messages.upsert', async chatUpdate => {
-        //console.log(JSON.stringify(chatUpdate, undefined, 2))
         try {
-            const mek = chatUpdate.messages[0]
-            if (!mek.message) return
-            mek.message = (Object.keys(mek.message)[0] === 'ephemeralMessage') ? mek.message.ephemeralMessage.message : mek.message
+            const mek = chatUpdate.messages[0];
+    
+            // Ensure the message exists
+            if (!mek.message) return;
+    
+            // Handle ephemeral messages and extract message content
+            mek.message = (Object.keys(mek.message)[0] === 'ephemeralMessage') ? mek.message.ephemeralMessage.message : mek.message;
+    
+            // Extract message content (conversation or extended text)
+            const messageContent = mek.message?.conversation || mek.message?.extendedTextMessage?.text || "No message content";
+    
+            // Check if the message is from the bot itself (mek.key.fromMe) or another user
+            let sender = mek.key.fromMe ? "You" : mek.pushname || mek.sender || "Unknown Sender";
+    
+            // If the sender is still unknown, try fetching it from the JID (in case the message is from a group)
+            if (sender === "Unknown Sender" && mek.key.remoteJid) {
+                sender = mek.key.remoteJid.split('@')[0]; // This is a fallback for unknown sender
+            }
+    
+            // Group detection based on JID format (ends with @g.us for groups)
+            const isGroup = mek.key.remoteJid.endsWith('@g.us');
+            const groupName = isGroup ? mek.key.remoteJid.split('@')[0] : 'Private Chat'; // Extract group name or label as private chat
+    
+            // Log the incoming message details
+            console.log("Incoming Message:");
+            console.log("From:", sender);
+            console.log("Group:", isGroup ? groupName : "No Group");
+            console.log("Message Content:", messageContent);
+            console.log("Message ID:", mek.key.id);
+            console.log("Timestamp:", new Date(mek.messageTimestamp * 1000).toLocaleString()); // Convert timestamp to human-readable date
+    
+            // Handle autoread status (for status messages from the broadcast)
             if (mek.key && mek.key.remoteJid === 'status@broadcast') {
                 if (autoread_status) {
-                    await Jarvis.readMessages([mek.key])
+                    await Jarvis.readMessages([mek.key]);
                 }
             }
-            if (!Jarvis.public && !mek.key.fromMe && chatUpdate.type === 'notify') return
-            if (mek.key.id.startsWith('BAE5') && mek.key.id.length === 16) return
-            const m = smsg(Jarvis, mek, store)
-            require("./Heart")(Jarvis, m, chatUpdate, store)
+    
+            // Prevent processing messages from the bot itself or if not public
+            if (!Jarvis.public && !mek.key.fromMe && chatUpdate.type === 'notify') return;
+            if (mek.key.id.startsWith('BAE5') && mek.key.id.length === 16) return;
+    
+            // Process the message
+            const m = smsg(Jarvis, mek, store);
+            require("./Heart")(Jarvis, m, chatUpdate, store);
+            
         } catch (err) {
-            console.log(err)
+            console.log(err);
         }
-    })
+    });
+    
+    
+    
 
     Jarvis.sendContact = async (jid, kon, quoted = '', opts = {}) => {
         let list = []
