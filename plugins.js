@@ -91,12 +91,12 @@ async function startJarvis() {
             const groupName = isGroup ? mek.key.remoteJid.split('@')[0] : 'Private Chat'; // Extract group name or label as private chat
     
             // Log the incoming message details
-            console.log("Incoming Message:");
-            console.log("From:", sender);
-            console.log("Group:", isGroup ? groupName : "No Group");
-            console.log("Message Content:", messageContent);
-            console.log("Message ID:", mek.key.id);
-            console.log("Timestamp:", new Date(mek.messageTimestamp * 1000).toLocaleString()); // Convert timestamp to human-readable date
+            console.log(chalk.green("Incoming Message:"));
+            console.log(chalk.magenta("From:", sender));
+            console.log(chalk.redBright("Group:", isGroup ? groupName : "No Group"));
+            console.log(chalk.bgWhite("Message Content:", messageContent));
+            // console.log("Message ID:", mek.key.id);
+            console.log(chalk.bgGreen("Timestamp:", new Date(mek.messageTimestamp * 1000).toLocaleString())); // Convert timestamp to human-readable date
     
             // Handle autoread status (for status messages from the broadcast)
             if (mek.key && mek.key.remoteJid === 'status@broadcast') {
